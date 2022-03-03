@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.0"
+      version = "~> 4.0"
     }
   }
   
@@ -15,7 +15,6 @@ terraform {
   }
 }
 
-# Configure the AWS Provider
 provider "aws" {
   region = "us-east-1"
 }
@@ -48,4 +47,8 @@ module parent_child_domain_association {
   child_name_servers = each.value.name_servers
   child_ds_record = each.value.ds_record
 
+}
+
+module website_bucket {
+  source = "./s3_bucket"
 }
