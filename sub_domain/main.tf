@@ -3,14 +3,6 @@ resource "aws_route53_zone" "this" {
   force_destroy = true
 }
 
-resource "aws_route53_record" "dummy" {
-  zone_id = aws_route53_zone.this.zone_id
-  name    = var.domain
-  type    = "A"
-  ttl     = "60"
-  records = ["127.0.0.1"]
-}
-
 ## Turn on DNSSEC for Parent Zone
 resource "aws_route53_key_signing_key" "this" {
   hosted_zone_id             = aws_route53_zone.this.id
@@ -26,7 +18,6 @@ resource "aws_route53_hosted_zone_dnssec" "this" {
 }
 
 ## Logging
-
 resource "aws_cloudwatch_log_group" "this" {
   name              = "/dnssec-demo/${var.domain}"
   retention_in_days = 7
@@ -40,8 +31,9 @@ data "aws_iam_policy_document" "dnssec-demo-route53-query-logging-policy" {
       "logs:PutLogEventsBatch",
     ]
 
+    # setting to arn of log group causes redeploy everytime
     resources = [
-      "${aws_cloudwatch_log_group.this.arn}:*"
+      "arn:aws:logs:us-east-1:475859042614:log-group:/dnssec-demo/*:*"
     ]
 
     principals {
