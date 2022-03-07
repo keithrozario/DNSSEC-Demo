@@ -1,7 +1,7 @@
 
 # Single Bucket and Cert for all deployments
-module website_bucket {
-  source = "./s3_bucket"
+module "website_bucket" {
+  source        = "./s3_bucket"
   bucket_prefix = "dnssec-demo-123"
 }
 
@@ -16,48 +16,52 @@ module "acm_request_certificate" {
 
 # Parent CDN
 module "cdn" {
-  source = "cloudposse/cloudfront-s3-cdn/aws"
+  source  = "cloudposse/cloudfront-s3-cdn/aws"
   version = "0.82.3"
 
-  name                          = "dnssec"
-  stage                         = "demo"
-  namespace                     = "parent"
+  name      = "dnssec"
+  stage     = "demo"
+  namespace = "parent"
 
-  dns_alias_enabled = true
-  origin_bucket     = module.website_bucket.bucket_name
+
+  origin_bucket                     = module.website_bucket.bucket_name
+  default_root_object               = "index.html"
+  min_ttl                           = 1
+  default_ttl                       = 3
+  max_ttl                           = 5
   cloudfront_access_logging_enabled = false
-  aliases           = [local.parent_domain]
-  parent_zone_name  = local.parent_domain
-  default_root_object = "index.html"
-  min_ttl = 1
-  default_ttl = 3
-  max_ttl = 5
-
-  acm_certificate_arn = module.acm_request_certificate.arn
-  depends_on = [module.acm_request_certificate]
+  dns_alias_enabled                 = false # don't set DNS, we'll set them in child zones accordingly
+  aliases                           = setunion([local.parent_domain], local.child_domains)
+  parent_zone_name                  = local.parent_domain
+  acm_certificate_arn               = module.acm_request_certificate.arn
+  depends_on                        = [module.acm_request_certificate]
 }
 
-# Child Zone CDN
-module "cdn_child" {
+resource "aws_route53_record" "parent" {
+
+  zone_id         = module.parent_zone.zone_id
+  name            = local.parent_domain
+  allow_overwrite = true
+  type            = "A"
+
+  alias {
+    name                   = module.cdn.cf_domain_name
+    zone_id                = module.cdn.cf_hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "children" {
   for_each = module.child_zone
+  
+  zone_id         = each.value.zone_id
+  name            = each.key
+  allow_overwrite = true
+  type            = "A"
 
-  source = "cloudposse/cloudfront-s3-cdn/aws"
-  version = "0.82.3"
-
-  name                          = "dnssec"
-  stage                         = "demo"
-  namespace                     = each.key
-
-  dns_alias_enabled = true
-  origin_bucket     = module.website_bucket.bucket_name
-  cloudfront_access_logging_enabled = false
-  aliases           = [each.key]
-  parent_zone_name  = each.key
-  default_root_object = "index.html"
-  min_ttl = 1
-  default_ttl = 3
-  max_ttl = 5
-
-  acm_certificate_arn = module.acm_request_certificate.arn
-  depends_on = [module.acm_request_certificate]
+  alias {
+    name                   = module.cdn.cf_domain_name
+    zone_id                = module.cdn.cf_hosted_zone_id
+    evaluate_target_health = false
+  }
 }
