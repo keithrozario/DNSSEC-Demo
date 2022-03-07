@@ -135,3 +135,5 @@ https://www.cyberciti.biz/faq/unix-linux-test-and-validate-dnssec-using-dig-comm
 List of major DNSSEC outtages:
 https://ianix.com/pub/dnssec-outages.html
 
+https://www.rfc-editor.org/rfc/rfc6840#section-5.11
+
