@@ -126,14 +126,21 @@ Testing the bad key (note the 'status SERVFAIL'):
 
 # Additional Reading
 
-Info on Record:
+Info on Record:  
 https://docs.infoblox.com/display/NAG8/RRSIG+Resource+Records
 
-How to run commands:
+How to run commands:  
 https://www.cyberciti.biz/faq/unix-linux-test-and-validate-dnssec-using-dig-command-line/
 
-List of major DNSSEC outtages:
+List of major DNSSEC outtages:  
 https://ianix.com/pub/dnssec-outages.html
 
-RFC Spec:
+RFC Spec:  
 https://www.rfc-editor.org/rfc/rfc6840#section-5.11
+
+Qname minimization (no relevant here, but interesting):  
+https://datatracker.ietf.org/doc/html/rfc7816
+
+IETF recommendation for resolver to authoritative server:  
+https://datatracker.ietf.org/doc/draft-ietf-dprive-opportunistic-adotq/?include_text=1
+https://www.centr.org/news/blog/ietf110-camel-back.html
