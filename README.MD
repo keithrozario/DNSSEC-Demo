@@ -135,6 +135,9 @@ https://www.cyberciti.biz/faq/unix-linux-test-and-validate-dnssec-using-dig-comm
 List of major DNSSEC outtages:  
 https://ianix.com/pub/dnssec-outages.html
 
+Latest DNSSEC outtage for GovZoom:
+https://dnsviz.net/d/www.zoomgov.com/YmGiOg/dnssec/
+
 RFC Spec:  
 https://www.rfc-editor.org/rfc/rfc6840#section-5.11
 
@@ -144,3 +147,13 @@ https://datatracker.ietf.org/doc/html/rfc7816
 IETF recommendation for resolver to authoritative server:  
 https://datatracker.ietf.org/doc/draft-ietf-dprive-opportunistic-adotq/?include_text=1
 https://www.centr.org/news/blog/ietf110-camel-back.html
+
+Info from MS:
+https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/jj200221(v=ws.11)
+
+More info on DNSSEC: https://sockpuppet.org/blog/2015/01/15/against-dnssec/
+
+Tools to mess with DNS: https://jvns.ca/blog/2021/12/15/mess-with-dns/
+
+How to find the authoritative NS: https://jvns.ca/blog/2022/01/11/how-to-find-a-domain-s-authoritative-nameserver
+
