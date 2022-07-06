@@ -1,40 +1,30 @@
 
 # Single Bucket and Cert for all deployments
-module "website_bucket" {
+module "website_bucket_main" {
   source        = "./s3_bucket"
   bucket_prefix = "dnssec-demo-123"
 }
 
-module "acm_request_certificate" {
-  source = "cloudposse/acm-request-certificate/aws"
-
-  domain_name                       = local.parent_domain
-  subject_alternative_names         = ["*.${local.parent_domain}"]
-  process_domain_validation_options = true
-  ttl                               = "300"
+# Single Bucket and Cert for all deployments
+module "website_bucket_no_ct" {
+  source        = "./s3_bucket"
+  bucket_prefix = "dnssec-demo-123"
 }
 
-# Parent CDN
-module "cdn" {
-  source  = "cloudposse/cloudfront-s3-cdn/aws"
-  version = "0.82.3"
+module "cf_website_main" {
+# Creates one single CF distribution backed by an S3 bucket
+# ACM Cert will be valid for *.domain_name (wildcard) -- not just the child domains
+  source = "./cf_website"
+  domain_name = local.parent_domain
+  child_domains = [for domain in local.child_domains : domain if domain != local.no_cert_logging_domain]
+  bucket_name = module.website_bucket_main.bucket_name
+}
 
-  name      = "dnssec"
-  stage     = "demo"
-  namespace = "parent"
-
-
-  origin_bucket                     = module.website_bucket.bucket_name
-  default_root_object               = "index.html"
-  min_ttl                           = 1
-  default_ttl                       = 3
-  max_ttl                           = 5
-  cloudfront_access_logging_enabled = false
-  dns_alias_enabled                 = false # don't set DNS, we'll set them in child zones accordingly
-  aliases                           = setunion([local.parent_domain], local.child_domains)
-  parent_zone_name                  = local.parent_domain
-  acm_certificate_arn               = module.acm_request_certificate.arn
-  depends_on                        = [module.acm_request_certificate]
+module "cf_website_no_ct_log" {
+  source = "./cf_website"
+  domain_name = local.no_cert_logging_domain
+  bucket_name = module.website_bucket_no_ct.bucket_name
+  certificate_transparency_logging_preference = false
 }
 
 resource "aws_route53_record" "parent" {
@@ -45,14 +35,14 @@ resource "aws_route53_record" "parent" {
   type            = "A"
 
   alias {
-    name                   = module.cdn.cf_domain_name
-    zone_id                = module.cdn.cf_hosted_zone_id
+    name                   = module.cf_website_main.cf_domain_name
+    zone_id                = module.cf_website_main.cf_hosted_zone_id
     evaluate_target_health = false
   }
 }
 
 resource "aws_route53_record" "children" {
-  for_each = module.child_zone
+  for_each = {for k,v in module.child_zone : k => v if k != local.no_cert_logging_domain}
   
   zone_id         = each.value.zone_id
   name            = each.key
@@ -60,8 +50,23 @@ resource "aws_route53_record" "children" {
   type            = "A"
 
   alias {
-    name                   = module.cdn.cf_domain_name
-    zone_id                = module.cdn.cf_hosted_zone_id
+    name                   = module.cf_website_main.cf_domain_name
+    zone_id                = module.cf_website_main.cf_hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "no_ct_domain" {
+  for_each = {for k,v in module.child_zone : k => v if k == local.no_cert_logging_domain}
+  
+  zone_id         = each.value.zone_id
+  name            = each.key
+  allow_overwrite = true
+  type            = "A"
+
+  alias {
+    name                   = module.cf_website_no_ct_log.cf_domain_name
+    zone_id                = module.cf_website_no_ct_log.cf_hosted_zone_id
     evaluate_target_health = false
   }
 }
